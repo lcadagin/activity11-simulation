@@ -1,6 +1,6 @@
 ---
 title: "Activity 11 - Simulation"
-author: "Name"
+author: "Luke Cadagin"
 output: github_document
 ---
 
@@ -25,7 +25,9 @@ One way to make sure that you get similar results each time is to always run all
 
 For this activity, you will need the `{tidyverse}`.
 
-**delete this line and load `{tidyverse}`**
+```{r load packges, message = FALSE}
+library(tidyverse)
+```
 
 
 ## Exploration
@@ -59,13 +61,25 @@ ggplot(norm_samp_1000, aes(x = values)) +
 
 Using `norm_samp_1000`, obtain the mean and standard deviation of this sample?
 
+```{r}
+norm_samp_1000 %>% 
+  summarize(mean = mean(values), stan_dev = sd(values))
+```
 
 
 Now, create a new simulation.
 In this you will obtain a sample of size 30 from from a Normally distributed variable with a mean 50 and standard deviation 10, and find the mean and standard deviation.
 How do the mean and standard deviation compare to your answers above?
 
+```{r}
+norm_samp_30 <- tibble(
+  values = rnorm(n = 30, mean = 50, sd = 10)
+)
+norm_samp_30 %>% 
+  summarize(mean = mean(values), stan_dev = sd(values))
+```
 
+The mean is slightly smaller and sd is slightly larger than the 1000 sample.
 
 ### Non-normally distributed population
 
@@ -73,8 +87,26 @@ Using a similar process, obtain Exponentially distributed variable (`?rexp`) wit
 Obtain a sample of 1,000 observations and a sample of 30 observations.
 Then, calculate the mean and standard deviation of each sample and discuss how the values are similar and how they differ.
 
+```{r}
+exp_samp_1000 <- tibble(
+  values = rexp(n = 1000, rate = .02)
+)
+
+exp_samp_1000 %>% 
+  summarize(mean = mean(values), stan_dev = sd(values))
+```
+
+```{r}
+exp_samp_30 <- tibble(
+  values = rexp(n = 30, rate = .02)
+)
+
+exp_samp_30 %>% 
+  summarize(mean = mean(values), stan_dev = sd(values))
+```
 
 
+The mean and the stan_dev are very close to each other for both sample sizes (1000 and 30).  The mean and standard deviation is farther away from each other for the 30 sample than the 1000 sample.
 
 ![](README-img/noun_pause.png) **Planned Pause Point**: If you have any questions, contact your instructor. Otherwise feel free to continue on.
 
@@ -92,6 +124,21 @@ This function should produce a dataset with `n` rows.
 You should **not** use the default parameter options for these distributions (e.g., your Normal data should not have a mean of 0 or a standard deviation of 1).
 Test your function with `n = 30` and `n = 1000`.
 
+```{r}
+generate_n_samples <- function(n) {
+  normal <- rnorm(n = n, mean = 65, sd = 2)
+  exponential <- rexp(n = n, rate = .5)
+  chisqr <- rchisq(n = n, df = 23)
+  uniform <- runif(n = n, min = 7, max = 16)
+  output <- tibble(normal, exponential, chisqr, uniform)
+}
+
+test_1000 <- generate_n_samples(1000)
+test_30 <- generate_n_samples(30)
+
+test_1000
+test_30
+```
 
 
 
@@ -103,16 +150,22 @@ The mean and standard deviation for each of the general distributions we are usi
 - [Chi-square distribution](https://en.wikipedia.org/wiki/Chi-squared_distribution): mean = `df`, standard deviation = sqrt(2 * `df`)
 - [Uniform distribution](https://en.wikipedia.org/wiki/Continuous_uniform_distribution): (`min` + `max`) / 2, standard deviation = (`max` - `min`) / sqrt(12)
 
+```{r}
+test_1000 %>% 
+  summarize(mean_norm = mean(normal), stan_dev_norm = sd(normal), mean_exp = mean(exponential), stan_dev_exp = sd(exponential), mean_chisqr = mean(chisqr), stan_dev_chisqr = sd(chisqr), mean_unif = mean(uniform), stan_dev_unif = sd(uniform))
+```
+
+
 
 Complete the table below with the **mean and standard deviation** values for your specific distributions.
 These are the "population values".
 
 | Distribution | Mean       | SD         |
 |--------------|------------|------------|
-| Normal       |            |            |
-| Exponential  |            |            |
-| Chi-square   |            |            |
-| Uniform      |            |            |
+| Normal       |      64.96      |       2.12     |
+| Exponential  |       2.01     |       2.14     |
+| Chi-square   |       23.54     |      6.99      |
+| Uniform      |     11.44       |       2.60     |
 
 
 Below I provide you with a function that calculates the sample mean for each column/distribution.
@@ -122,6 +175,8 @@ sample_mean <- function(.data){
   .data %>% 
     summarise(across(everything(), mean, .names = "mean_{.col}"))
 }
+
+sample_mean(test_1000)
 ```
 
 First, verify that you know what each line of this function is doing.
@@ -129,8 +184,12 @@ Then, use this function in addition to your multiple distribution sample generat
 Discuss how the means compares for each distribution.
 Note that it doesn't make sense to compare means/standard deviations across the distributions.
 
+```{r}
+sample_mean(generate_n_samples(1000))
+sample_mean(generate_n_samples(30))
+```
 
-
+When the sample size is larger, the mean is much closer to the true mean.
 
 ## Many samples
 
@@ -156,12 +215,22 @@ map(1:1000, ~rnorm(30, mean = 50, sd = 10))
 Continuing to work with your multiple distribution sample generator from above, generate 1,000 samples from the four distributions each with size 30.
 We will want to continue to work with this list so be sure to assign these samples to an appropriately named object (say, `multiple_samples`).
 
+```{r}
+multiple_samples <- map(1:1000, ~generate_n_samples(30))
+head(multiple_samples)
+```
 
 
 Calculate the sample mean of each sample using the appropriate `map` function and my `sample_mean` function to produce a *data frame* of multiple sample means from your multiple samples object.
 Assign these sample means to an appropriately named object.
 
+```{r}
+sample_means_multiple_samples <- map(multiple_samples, ~sample_mean(.))
+```
 
+```{r}
+head(sample_means_multiple_samples)
+```
 
 
 
