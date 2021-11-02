@@ -162,10 +162,10 @@ These are the "population values".
 
 | Distribution | Mean       | SD         |
 |--------------|------------|------------|
-| Normal       |      64.96      |       2.12     |
-| Exponential  |       2.01     |       2.14     |
-| Chi-square   |       23.54     |      6.99      |
-| Uniform      |     11.44       |       2.60     |
+| Normal       |      65.1      |       1.96     |
+| Exponential  |       2.02     |       2.12     |
+| Chi-square   |       23.31     |      6.85      |
+| Uniform      |     11.38       |       2.62     |
 
 
 Below I provide you with a function that calculates the sample mean for each column/distribution.
@@ -229,6 +229,7 @@ sample_means_multiple_samples <- map(multiple_samples, ~sample_mean(.))
 ```
 
 ```{r}
+sample_means_multiple_samples <- bind_rows(sample_means_multiple_samples)
 head(sample_means_multiple_samples)
 ```
 
@@ -237,11 +238,23 @@ head(sample_means_multiple_samples)
 Restructure your previous sample means R object to, instead of having 1,000 rows and 4 columns, have 4,000 rows and 2 columns where the columns are named `distribution` and `means`.
 Assign this restructured data to an appropriately named object.
 
+```{r}
+sample_means_by_distibution <- sample_means_multiple_samples %>% 
+  pivot_longer(cols = c(mean_normal, mean_exponential, mean_chisqr, mean_uniform), names_to = "distribution", values_to = "means")
+
+head(sample_means_by_distibution)
+```
 
 
 
 Using the restructured data, create a histogram for each `distribution` using a *facet* layer.
 
+```{r}
+sample_means_by_distibution %>% 
+  ggplot() +
+  geom_histogram(mapping = aes(x = means), binwidth = 1) +
+  facet_wrap(~distribution)
+```
 
 
 
@@ -249,20 +262,33 @@ Comment on each of shape of each of the mean plots above.
 How was the distribution of the sample means different than the distribution of the population?
 Note, looking at the wiki pages linked early in this activity will help you compare your sample mean distributions to the population distributions.
 
-
+All of the distributions above are tightly packed (have small standard errors).  They also all appear to be approximately normal distributions.  This was different than the distribution of the population because not every population distribution is normal.
 
 Using the restructured data, obtain the mean and standard deviation **for each** of the distributions.
 
+```{r}
+sample_means_by_distibution %>% 
+  group_by(distribution) %>% 
+  summarize(mean = mean(means), stand_dev = sd(means))
+```
 
 
 
 Comment on how each mean compares to the "population values" mean that you calculated above.
 
+| Distribution | Mean       | SD         |
+|--------------|------------|------------|
+| Normal       |      65.1      |       1.96     |
+| Exponential  |       2.02     |       2.12     |
+| Chi-square   |       23.31     |      6.85      |
+| Uniform      |     11.38       |       2.62     |
+
+The means of these standard deviations are very close to the "population values" means from above (little difference).
 
 
 Comment on how each standard deviation compares to the "population values" standard deviation that you calculated above.
 
-
+The standard deviations are much smaller than the "population values" standard deviations from above (large difference).
 
 ![](README-img/noun_pause.png) **Planned Pause Point**: If you have any questions, contact your instructor. Otherwise feel free to continue on.
 
@@ -278,13 +304,15 @@ The first view widow should simply tell you "`stat_bin()` using `bins = 30`. Pic
 ```{r}
 source(here::here("functions", "helper.R"))
 
-distribution_exploration(n = 100, rep = 1000, mean = 50, sd = 10, rate = 0.2, df = 4, min = 20, max = 40)
+distribution_exploration(n = 100, rep = 1000, mean = 65, sd = 2, rate = 0.5, df = 23, min = 7, max = 16)
 ```
+
+
 
 
 How do these values compare to your work with `n = 30`?
 
-
+For a sample size of n = 100, the average sample mean is much closer to the true mean and the standard error is much smaller (data is less spread out) than when you compare to a sample size of n = 30.
 
 
 
@@ -301,6 +329,41 @@ Instead of calculating the mean of each of the 1,000 samples, explore one or a f
 - IQR
 
 
+```{r}
+multiple_samples2 <- map(1:1000, ~generate_n_samples(30))
+head(multiple_samples)
+```
+
+```{r}
+sample_median <- function(.data){
+  .data %>% 
+    summarise(across(everything(), median, .names = "median_{.col}"))
+}
+```
+
+```{r}
+sample_medians_multiple_samples <- map(multiple_samples, ~sample_median(.))
+```
+
+```{r}
+sample_medians_multiple_samples <- bind_rows(sample_medians_multiple_samples)
+head(sample_medians_multiple_samples)
+```
+
+```{r}
+sample_medians_by_distibution <- sample_medians_multiple_samples %>% 
+  pivot_longer(cols = c(median_normal, median_exponential, median_chisqr, median_uniform), names_to = "distribution", values_to = "medians")
+
+head(sample_medians_by_distibution)
+```
+
+```{r}
+sample_medians_by_distibution %>% 
+  ggplot() +
+  geom_histogram(mapping = aes(x = medians), binwidth = 1) +
+  facet_wrap(~distribution)
+```
+
 
 ## Challenge 2: Apply this knowledge
 
@@ -309,6 +372,9 @@ Assume that wait times are Exponentially distributed with a mean of 10 minutes.
 For Exponentially distributed variables, remember that mean = 1 / `rate`.
 What is the `rate` of our population distribution?
 
+mean = 1 / rate
+10 = 1 / rate
+rate = .1
 
 You think this might be a lie.
 In the last 30 days during peak hours, you have waited for the bus an average of 15 minutes.
@@ -326,6 +392,31 @@ To do this,
 3. Calculate the mean of each of the 1,000 samples
 4. Calculate what percentage of the sample means waited as long or longer than you.
 
+```{r}
+wait_time_sample_30 <- rexp(n = 30, rate = .1)
+wait_time_sample_30
+```
+
+```{r}
+multiple_samples <- map(1:1000, ~rexp(n = 30, rate = .1))
+```
+
+```{r}
+head(multiple_samples)
+```
+```{r}
+means_of_multiple_samples <- map(multiple_samples, ~mean(.))
+```
+
+```{r}
+means_of_multiple_samples <- unlist(means_of_multiple_samples)
+```
+
+```{r}
+tibble(means = means_of_multiple_samples) %>% 
+  filter(means >= 15) %>% 
+  summarize(prop = n() / 1000)
+```
 
 
 
@@ -336,17 +427,21 @@ To do this,
 1. Recall that the CLT states that all potential sample means are approximately normal with mean 10 (GVSU's claim) and a standard deviation of the population standard deviation (you calculated this by-hand above) divided by the square root of the sample size (30 days).
 2. Find the probability from the normal distribution in (1) that a sample mean is as long as or longer than your time of 15 minutes. You do not need to use any simulations, simply the appropriate `xnorm` function (where `x` is replaced with the appropriate one of either `d`, `p`, `q`, or `r`).
 
+```{r}
+1 - pnorm(15, mean = 10, sd = 10/sqrt(30))
+```
 
 
 
 
 Comment on how similar/different your results were for the simulation and CLT methods.
 
+The simulation showed that the probability of an average bus wait time is about 1% while the CLT method showed that the probability was about .3%.  Both very low probabilities.
 
 
 Do you believe that bus wait times are Exponentially distributed?
 
-
+No, I do not beilieve the bus wait times are Exponentially distributed.
 
 
 ![](README-img/noun_pause.png) **Planned Pause Point**: If you have any questions, contact your instructor. Otherwise feel free to continue on.

@@ -1,9 +1,9 @@
 generate_n_samples <- function(n){
   tibble(
-    normal = rnorm(n = n, mean = 50, sd = 10),
-    exponential = rexp(n = n, rate = 0.2),
-    binomial = rbinom(n = n, size = 100, prob = 0.25),
-    uniform = runif(n = n, min = 10, max = 20)
+    normal = rnorm(n = n, mean = 65, sd = 2),
+    exponential = rexp(n = n, rate = 0.5),
+    chisqr = rchisq(n = n, df = 23),
+    uniform = runif(n = n, min = 7, max = 16)
   )
 }
 
